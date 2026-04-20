@@ -1,6 +1,6 @@
 #!/bin/bash
 # ================================================
-# DEV SCRIPT - Local development & test
+# DEV SCRIPT - CNLG Price Tracker
 # ================================================
 
 set -e
@@ -11,9 +11,9 @@ COMMAND=${1:-"run"}
 
 case $COMMAND in
     "install")
-        echo "📦 Installing dependencies with Pipenv..."
+        echo "📦 Installing dependencies..."
         pipenv install
-        echo "✅ Done! Run 'pipenv shell' để vào môi trường."
+        echo "✅ Done! Chạy 'pipenv shell' để vào môi trường."
         ;;
 
     "migrate")
@@ -24,26 +24,17 @@ case $COMMAND in
 
     "test-crawl")
         echo "🧪 Testing crawl 1 sản phẩm..."
-        if [ -z "$2" ]; then
-            URL="https://cungnhaulamgiau.vn/tong-do-cat-toc-thong-minh-huawei-dynacare-hut-toc-tu-dong-khi-cat_p121951"
-        else
-            URL="$2"
-        fi
-        echo "Testing URL: $URL"
-        pipenv run python -c "
-import asyncio
-from scraper import scrape_product
-asyncio.run(scrape_product('$URL'))
-"
+        URL=${2:-"https://cungnhaulamgiau.vn/tong-do-cat-toc-thong-minh-huawei-dynacare-hut-toc-tu-dong-khi-cat_p121951"}
+        echo "URL: $URL"
+        pipenv run python test_crawl.py "$URL"
         ;;
 
     "run")
-        echo "🌐 Starting FastAPI server locally..."
+        echo "🌐 Starting FastAPI server..."
         pipenv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
         ;;
 
     "shell")
-        echo "🐚 Opening Pipenv shell..."
         pipenv shell
         ;;
 
@@ -51,9 +42,9 @@ asyncio.run(scrape_product('$URL'))
         echo "❓ Usage:"
         echo "   ./dev.sh install          # Cài dependencies"
         echo "   ./dev.sh migrate          # Chạy migration"
-        echo "   ./dev.sh test-crawl       # Test crawl (dùng link mặc định)"
-        echo "   ./dev.sh test-crawl [URL] # Test crawl với link cụ thể"
-        echo "   ./dev.sh run              # Chạy server local"
-        echo "   ./dev.sh shell            # Vào môi trường pipenv"
+        echo "   ./dev.sh test-crawl       # Test crawl (mặc định)"
+        echo "   ./dev.sh test-crawl [URL] # Test crawl với link khác"
+        echo "   ./dev.sh run              # Chạy server"
+        echo "   ./dev.sh shell            # Vào shell pipenv"
         ;;
 esac

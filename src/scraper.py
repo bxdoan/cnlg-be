@@ -1,7 +1,7 @@
 import requests
 import json
-from database import SessionLocal
-from models import Product, PriceHistory
+from src.database import SessionLocal
+from src.models import Product, PriceHistory
 from datetime import datetime
 
 HEADERS = {

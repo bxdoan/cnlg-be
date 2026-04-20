@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, BigInteger, DateTime, ForeignKey, Boolean
-from sqlalchemy.orm import relationship
 from datetime import datetime
-from database import Base
+from src.database import Base
 import uuid
 
 

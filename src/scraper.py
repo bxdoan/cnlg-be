@@ -1,64 +1,81 @@
-from playwright.async_api import async_playwright
+import requests
+import json
 from database import SessionLocal
 from models import Product, PriceHistory
-import asyncio
 from datetime import datetime
 
-async def scrape_product(url: str):
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-        await page.goto(url, wait_until="networkidle", timeout=60000)
+HEADERS = {
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "vi,en;q=0.9",
+    "Content-Type": "application/json",
+    "Origin": "https://cungnhaulamgiau.vn",
+    "Referer": "https://cungnhaulamgiau.vn/",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+    "x-tenant-domain": "cungnhaulamgiau.vn",
+    "x-tenant-id": "1",
+}
 
-        try:
-            # === TODO: Mở trang sản phẩm → F12 → thay selector chính xác ===
-            sku_text = await page.locator("text=SKU:").locator("..").inner_text()
-            sku = sku_text.replace("SKU:", "").strip()
+def scrape_product(url: str):
+    try:
+        # Bước 1: Lấy product_id từ URL (ví dụ: ..._p129310 → 129310)
+        product_id = url.split("_p")[-1].split("?")[0].strip()
+        if not product_id.isdigit():
+            print("❌ Không tìm thấy product_id trong URL")
+            return
 
-            retail_price = None
-            try:
-                retail_text = await page.locator(".retail-price, .price-label, .original-price del").first.inner_text()
-                retail_price = int(''.join(filter(str.isdigit, retail_text)))
-            except:
-                pass
+        # Bước 2: Gọi API get-price (cách nhanh nhất)
+        payload = {
+            "items": [{
+                "product_id": int(product_id),
+                "variation_id": None,   # trang sẽ tự xử lý nếu không có
+                "sku": None
+            }]
+        }
 
-            original_price = None
-            try:
-                original_text = await page.locator(".price del .amount, .original-price").first.inner_text()
-                original_price = int(''.join(filter(str.isdigit, original_text)))
-            except:
-                pass
+        response = requests.post(
+            "https://cungnhaulamgiau.vn/api/proxy/bff/variations/get-price",
+            headers=HEADERS,
+            json=payload,
+            timeout=15
+        )
 
-            current_text = await page.locator(".woocommerce-Price-amount.amount, .price .amount").first.inner_text()
-            current_price = int(''.join(filter(str.isdigit, current_text)))
+        if response.status_code != 200:
+            print(f"❌ API error {response.status_code}")
+            return
 
-            title = await page.title()
+        data = response.json()
+        if not data.get("success") or not data.get("data"):
+            print("❌ API trả về không thành công")
+            return
 
-            discount = None
-            if retail_price and current_price and retail_price > current_price:
-                discount = round((retail_price - current_price) / retail_price * 100)
+        item = data["data"][0]
 
-            db = SessionLocal()
-            product = db.query(Product).filter(Product.sku == sku).first()
-            if not product:
-                product = Product(sku=sku, url=url, title=title)
-                db.add(product)
-            else:
-                product.last_crawled = datetime.utcnow()
+        sku = item.get("sku")
+        current_price = int(item.get("fe_price_override") or item.get("fe_price_public") or 0)
+        original_price = int(item.get("fe_price_public") or 0)
 
-            history = PriceHistory(
-                sku=sku,
-                retail_price=retail_price,
-                original_price=original_price,
-                current_price=current_price,
-                discount_percent=discount
-            )
-            db.add(history)
-            db.commit()
-            db.close()
+        print(f"✅ Crawled thành công!")
+        print(f"   SKU          : {sku}")
+        print(f"   Giá hiện tại : {current_price:,} ₫")
+        print(f"   Giá gốc      : {original_price:,} ₫")
 
-            print(f"✅ Crawled {sku} | Lẻ:{retail_price:,} | Gốc:{original_price:,} | Hiện:{current_price:,}đ")
-        except Exception as e:
-            print(f"❌ Error crawling {url}: {e}")
-        finally:
-            await browser.close()
+        # Bước 3: Lưu vào database
+        db = SessionLocal()
+        product = db.query(Product).filter(Product.sku == sku).first()
+        if not product:
+            product = Product(sku=sku, url=url, title=f"Product {sku}")
+            db.add(product)
+
+        history = PriceHistory(
+            sku=sku,
+            retail_price=original_price,      # giá lẻ cao nhất
+            original_price=original_price,
+            current_price=current_price,
+            discount_percent=round((original_price - current_price) / original_price * 100) if original_price > current_price else 0
+        )
+        db.add(history)
+        db.commit()
+        db.close()
+
+    except Exception as e:
+        print(f"❌ Error crawling {url}: {e}")

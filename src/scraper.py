@@ -79,3 +79,6 @@ def scrape_product(url: str):
 
     except Exception as e:
         print(f"❌ Error crawling {url}: {e}")
+
+if __name__ == "__main__":
+    session = SessionLocal()

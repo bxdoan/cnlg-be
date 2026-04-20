@@ -7,9 +7,9 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: price_tracker
+      POSTGRES_DB: cnlg_be
     ports:
-      - "5432:5432"
+      - "54328:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -18,7 +18,7 @@ services:
     build: .
     container_name: price_tracker_app
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/price_tracker
+      DATABASE_URL: postgresql://postgres:password@db:54328/cnlg_be
     ports:
       - "8000:8000"
     depends_on:

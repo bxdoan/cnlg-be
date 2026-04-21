@@ -9,14 +9,14 @@ from alembic import context
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import từ src (cấu trúc project của bạn)
-from src.database import Base, SQLALCHEMY_DATABASE_URL
+from src.database import Base, DATABASE_URL
 from src.models import User, Product, PriceHistory
 
 # Alembic Config
 config = context.config
 
 # Sử dụng DATABASE_URL từ .env
-config.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 # Logging
 if config.config_file_name is not None:

@@ -84,13 +84,14 @@ def save_product_and_price(db, product_item: dict, price_item: dict):
     if not product:
         product = Product(
             sku=sku,
-            url=product_item.get('product_id'),
+            product_id=product_item.get('product_id'),
             title=title,
             thumbnail_url=thumbnail_url
         )
         db.add(product)
     else:
         product.title = title
+        product.product_id = product_item.get('product_id')
         product.thumbnail_url = thumbnail_url
         product.last_crawled = datetime.utcnow()
 

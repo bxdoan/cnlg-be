@@ -12,11 +12,10 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
 
-    api_key = Column(String, unique=True, nullable=True)
-    plan = Column(String, default="Free")  # Free, Basic, Pro, Enterprise
+    api_key = Column(String, unique=True, nullable=True)  # cũ, có thể bỏ sau
+    plan = Column(String, default="Free")
 
-    # NEW: Weekly quota (reset every week, billing still monthly)
-    weekly_quota = Column(Integer, default=3)  # Free: 3, Pro: 300, ...
+    weekly_quota = Column(Integer, default=3)
     requests_this_week = Column(Integer, default=0)
     last_quota_reset = Column(DateTime, nullable=True)
 
@@ -27,10 +26,11 @@ class User(Base):
 class Product(Base):
     __tablename__ = "products"
     sku = Column(String, primary_key=True, index=True)
-    url = Column(String, unique=True, nullable=False)
-    title = Column(String, nullable=True)
 
-    # NEW: Thumbnail image for user display / Chrome Extension
+    # ĐÃ THAY ĐỔI THEO YÊU CẦU
+    product_id = Column(String, nullable=True)  # ← trước là url, giờ là product_id, không unique
+
+    title = Column(String, nullable=True)
     thumbnail_url = Column(String, nullable=True)
 
     last_crawled = Column(DateTime, default=datetime.utcnow)

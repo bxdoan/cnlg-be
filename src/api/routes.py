@@ -54,8 +54,12 @@ async def admin_activate(
 
 # API cho Extension
 @router.get("/history/{sku}")
-async def get_price_history(sku: str, days: int = 30, user: User = Depends(get_current_user),
-                            db: Session = Depends(get_db)):
+async def get_price_history(
+        sku: str,
+        days: int = 30,
+        user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
     max_days = 90 if user.plan in ["Pro", "Enterprise"] else 30
     if days > max_days: days = max_days
     cutoff = datetime.utcnow() - timedelta(days=days)

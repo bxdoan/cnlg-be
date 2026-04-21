@@ -13,7 +13,7 @@ def main():
     print(f"   URL: {url}")
     print("-" * 60)
 
-    scrape_product(url)  # ← Gọi trực tiếp, không await
+    scrape_product(url)
 
     print("\n✅ Test crawl hoàn tất!")
 

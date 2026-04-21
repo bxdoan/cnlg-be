@@ -14,6 +14,12 @@ class User(Base):
 
     api_key = Column(String, unique=True, nullable=True)
     plan = Column(String, default="Free")  # Free, Basic, Pro, Enterprise
+
+    # NEW: Weekly quota (reset every week, billing still monthly)
+    weekly_quota = Column(Integer, default=3)  # Free: 3, Pro: 300, ...
+    requests_this_week = Column(Integer, default=0)
+    last_quota_reset = Column(DateTime, nullable=True)
+
     max_skus = Column(Integer, default=10)
     subscription_end = Column(DateTime, nullable=True)
 
@@ -23,6 +29,10 @@ class Product(Base):
     sku = Column(String, primary_key=True, index=True)
     url = Column(String, unique=True, nullable=False)
     title = Column(String, nullable=True)
+
+    # NEW: Thumbnail image for user display / Chrome Extension
+    thumbnail_url = Column(String, nullable=True)
+
     last_crawled = Column(DateTime, default=datetime.utcnow)
 
 

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.routes import router
-from scheduler import scheduler
+from src.scheduler import scheduler
 
 app = FastAPI(title="Price Tracker - cungnhaulamgiau.vn")
 

@@ -13,8 +13,9 @@ python-dotenv = "*"
 playwright = "*"
 apscheduler = "*"
 alembic = "*"
-passlib = {extras = ["bcrypt"], version = "*"}
 python-multipart = "*"
+python-jose = {extras = ["cryptography"], version = "*"}
+passlib = {extras = ["bcrypt"], version = "*"}
 
 [dev-packages]
 black = "*"

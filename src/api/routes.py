@@ -12,7 +12,7 @@ from src.scraper import scrape_all_products
 from src.auth import create_access_token, get_password_hash, verify_password, get_current_user
 from datetime import datetime, timedelta
 
-router = APIRouter(tags=["auth", "price"])
+router = APIRouter()
 
 
 # ==================== REGISTER ====================
@@ -72,6 +72,9 @@ async def get_price_history(
     token = authorization.split(" ")[1]
     user = get_current_user(token, db)
 
+    if user.requests_this_week == 10:
+        return {"sku": sku, "message": "Đã tới hạn tối đa trong tuần"}
+
     cutoff = datetime.utcnow() - timedelta(days=days)
     history = db.query(PriceHistory).filter(
         PriceHistory.sku == sku,
@@ -80,6 +83,9 @@ async def get_price_history(
 
     if not history:
         return {"sku": sku, "message": "Chưa có dữ liệu giá"}
+
+    user.requests_this_week += 1
+    db.commit()
 
     return {
         "sku": sku,

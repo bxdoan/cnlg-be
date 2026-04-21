@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from database import SessionLocal, get_db
-from models import User, PriceHistory
-from auth import get_password_hash, get_current_user
-from scraper import scrape_product
+from src.database import SessionLocal, get_db
+from src.models import User, PriceHistory
+from src.auth import get_password_hash, get_current_user
+from src.scraper import scrape_all_products
 from datetime import datetime, timedelta
 import uuid
 
@@ -80,6 +80,6 @@ async def get_price_history(sku: str, days: int = 30, user: User = Depends(get_c
 
 
 @router.post("/track")
-async def track_product(url: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    await scrape_product(url)
+async def track_product(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    await scrape_all_products()
     return {"message": "Đã thêm sản phẩm"}

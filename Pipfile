@@ -15,7 +15,7 @@ apscheduler = "*"
 alembic = "*"
 python-multipart = "*"
 python-jose = {extras = ["cryptography"], version = "*"}
-passlib = {extras = ["bcrypt"], version = "*"}
+bcrypt = "*"
 
 [dev-packages]
 black = "*"

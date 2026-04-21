@@ -1,30 +1,30 @@
 """
-JWT Authentication for CNLG Price Tracker
+JWT + bcrypt Authentication for CNLG Price Tracker
+Phiên bản ổn định, không dùng passlib để tránh conflict
 """
 
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from src.models import User
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException
+import bcrypt
 
-SECRET_KEY = "super-secret-key-2026-change-this-in-production"  # ← Lấy từ .env sau
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30  # 30 ngày
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+from src.config import SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hash password với bcrypt (ổn định hơn passlib)"""
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """Kiểm tra password"""
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 
 def create_access_token(data: dict) -> str:
+    """Tạo JWT token"""
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
@@ -32,6 +32,7 @@ def create_access_token(data: dict) -> str:
 
 
 def get_current_user(token: str, db: Session):
+    """Lấy user từ token"""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
@@ -40,6 +41,7 @@ def get_current_user(token: str, db: Session):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    from src.models import User
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from src.database import SessionLocal, get_db
+from src.database import get_db
 from src.models import User, PriceHistory
 from src.auth import get_password_hash, get_current_user
 from src.scraper import scrape_all_products
@@ -9,12 +9,11 @@ import uuid
 
 router = APIRouter()
 
-
-# Đăng ký user
+# Register new user
 @router.post("/register")
 async def register(email: str = Body(...), password: str = Body(...), db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == email).first():
-        raise HTTPException(400, "Email đã tồn tại")
+        raise HTTPException(400, "Email already exists")
     user = User(
         email=email,
         hashed_password=get_password_hash(password),
@@ -23,10 +22,10 @@ async def register(email: str = Body(...), password: str = Body(...), db: Sessio
     )
     db.add(user)
     db.commit()
-    return {"message": "Đăng ký thành công. Chuyển khoản và liên hệ admin để kích hoạt."}
+    return {"message": "Registration successful. Please contact admin to activate."}
 
 
-# Admin tạo API Key (bạn dùng)
+# Admin activate user + create API Key
 @router.post("/admin/activate")
 async def admin_activate(
         email: str = Body(...),
@@ -36,7 +35,7 @@ async def admin_activate(
 ):
     user = db.query(User).filter(User.email == email).first()
     if not user:
-        raise HTTPException(404, "User không tồn tại")
+        raise HTTPException(404, "User not found")
 
     api_key = f"cnlg_{uuid.uuid4().hex[:16]}"
     user.api_key = api_key
@@ -48,12 +47,12 @@ async def admin_activate(
     return {
         "api_key": api_key,
         "plan": plan,
-        "hết hạn": user.subscription_end.strftime("%d/%m/%Y %H:%M")
+        "expires": user.subscription_end.strftime("%d/%m/%Y %H:%M")
     }
 
 
-# API cho Extension
-@router.get("/history/{sku}")
+# API for Chrome Extension - Get price history
+@router.get("/history/{sku}", response_model=None)   # ← FIX HERE (quan trọng nhất)
 async def get_price_history(
         sku: str,
         days: int = 30,
@@ -61,7 +60,9 @@ async def get_price_history(
         db: Session = Depends(get_db)
 ):
     max_days = 90 if user.plan in ["Pro", "Enterprise"] else 30
-    if days > max_days: days = max_days
+    if days > max_days:
+        days = max_days
+
     cutoff = datetime.utcnow() - timedelta(days=days)
 
     history = db.query(PriceHistory).filter(
@@ -70,7 +71,7 @@ async def get_price_history(
     ).order_by(PriceHistory.timestamp).all()
 
     if not history:
-        return {"message": "Chưa có dữ liệu"}
+        return {"message": "No data yet"}
 
     min_price = min(h.current_price for h in history)
     return {
@@ -78,12 +79,13 @@ async def get_price_history(
         "current_price": history[-1].current_price,
         "retail_price": history[-1].retail_price,
         "min_price": min_price,
-        "savings_percent": round((history[-1].current_price - min_price) / history[-1].current_price * 100, 1),
+        "savings_percent": round((history[-1].current_price - min_price) / history[-1].current_price * 100, 1) if history[-1].current_price else 0,
         "history": [{"timestamp": h.timestamp.isoformat(), "price": h.current_price} for h in history]
     }
 
 
+# Trigger full crawl (for testing)
 @router.post("/track")
 async def track_product(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    await scrape_all_products()
-    return {"message": "Đã thêm sản phẩm"}
+    scrape_all_products()   # removed await because function is synchronous
+    return {"message": "Full crawl started successfully"}

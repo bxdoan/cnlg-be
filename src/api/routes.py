@@ -58,6 +58,24 @@ async def login(
     }
 
 
+@router.get("/me")
+async def get_me(authorization: str = Header(None), db: Session = Depends(get_db)):
+    """Trả về thông tin user + quota còn lại"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token không hợp lệ")
+
+    token = authorization.split(" ")[1]
+    user = get_current_user(token, db)
+
+    return {
+        "email": user.email,
+        "plan": user.plan,
+        "quota_used": user.requests_this_week,
+        "quota_total": user.weekly_quota,
+        "quota_remaining": user.weekly_quota - user.requests_this_week
+    }
+
+
 # ==================== PROTECTED: HISTORY ====================
 @router.get("/history/{sku}")
 async def get_price_history(
@@ -67,32 +85,42 @@ async def get_price_history(
     db: Session = Depends(get_db)
 ):
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Thiếu hoặc token không hợp lệ")
+        raise HTTPException(status_code=401, detail="Token không hợp lệ")
 
     token = authorization.split(" ")[1]
     user = get_current_user(token, db)
 
-    if user.requests_this_week == 10:
-        return {"sku": sku, "message": "Đã tới hạn tối đa trong tuần"}
-
-    cutoff = datetime.utcnow() - timedelta(days=days)
-    history = db.query(PriceHistory).filter(
-        PriceHistory.sku == sku,
-        PriceHistory.timestamp >= cutoff
-    ).order_by(PriceHistory.timestamp.desc()).limit(200).all()
-
-    if not history:
-        return {"sku": sku, "message": "Chưa có dữ liệu giá"}
-
+    # Cập nhật quota
     user.requests_this_week += 1
     db.commit()
+
+    # ==================== FIX QUERY ====================
+    # Bỏ filter timestamp tạm thời để debug + dùng cách an toàn hơn
+    print(f"[DEBUG] Query history for SKU: {sku} | days={days}")
+
+    history = db.query(PriceHistory).filter(
+        PriceHistory.sku == sku
+    ).order_by(PriceHistory.timestamp.desc()).limit(200).all()
+
+    print(f"[DEBUG] Tìm thấy {len(history)} records cho SKU {sku}")
+
+    if not history:
+        # Nếu vẫn không ra, in thử 1 record bất kỳ để kiểm tra
+        sample = db.query(PriceHistory).limit(1).first()
+        print(f"[DEBUG] Sample record in DB: {sample.sku if sample else 'No data'}")
+        return {"sku": sku, "message": "Không tìm thấy dữ liệu giá cho SKU này"}
 
     return {
         "sku": sku,
         "current_price": history[0].current_price,
         "history_count": len(history),
         "plan": user.plan,
-        "data": [{"timestamp": h.timestamp.isoformat(), "price": h.current_price} for h in history]
+        "data": [
+            {
+                "timestamp": h.timestamp.isoformat(),
+                "price": h.current_price
+            } for h in history
+        ]
     }
 
 

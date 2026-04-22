@@ -5,9 +5,10 @@ Supports full pagination based on total_records.
 Saves products with thumbnail_url and price history.
 """
 import time
+import requests
+
 from datetime import datetime
 
-import requests
 from src.database import SessionLocal
 from src.models import Product, PriceHistory
 

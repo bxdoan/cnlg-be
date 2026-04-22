@@ -34,6 +34,20 @@ case $COMMAND in
         pipenv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
         ;;
 
+    "docker")
+        echo "🔨 Build & Run Docker (no-cache)..."
+        docker-compose down
+        docker-compose build --no-cache
+        docker-compose up -d
+
+        echo "🔄 Running database migration..."
+        docker-compose exec -T app alembic upgrade head || echo "⚠️ Migration skipped or already up to date."
+
+        echo "📋 Showing app logs (Ctrl + C để dừng)..."
+        echo "=================================================="
+        docker-compose logs -f app
+        ;;
+
     "shell")
         pipenv shell
         ;;

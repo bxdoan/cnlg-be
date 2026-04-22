@@ -12,10 +12,6 @@ from src.scheduler import scheduler
 
 app = FastAPI(title="Price Tracker - cungnhaulamgiau.vn")
 
-# ====================== THÊM Ở ĐẦU FILE (sau các import) ======================
-
-
-
 # ====================== THÊM CLASS NÀY TRƯỚC KHI TẠO APP ======================
 class ChromeExtensionCORSMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

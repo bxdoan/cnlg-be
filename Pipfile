@@ -4,18 +4,20 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-fastapi = "*"
-uvicorn = {extras = ["standard"], version = "*"}
-sqlalchemy = "*"
-psycopg2-binary = "*"
+requests = "*"
 pydantic = "*"
-python-dotenv = "*"
 playwright = "*"
 apscheduler = "*"
-alembic = "*"
 python-multipart = "*"
-python-jose = {extras = ["cryptography"], version = "*"}
 bcrypt = "*"
+fastapi = "*"
+uvicorn = "*"
+sqlalchemy = "*"
+psycopg2-binary = "*"
+python-jose = {extras = ["cryptography"], version = "*"}
+passlib = {extras = ["bcrypt"], version = "*"}
+alembic = "*"
+python-dotenv = "*"
 
 [dev-packages]
 black = "*"

@@ -18,6 +18,7 @@ python-jose = {extras = ["cryptography"], version = "*"}
 passlib = {extras = ["bcrypt"], version = "*"}
 alembic = "*"
 python-dotenv = "*"
+starlette = "*"
 
 [dev-packages]
 black = "*"

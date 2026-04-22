@@ -1,6 +1,6 @@
 """
 CNLG Price Tracker - Main FastAPI Application
-CORS CUSTOM MIDDLEWARE - FIX HOÀN TOÀN CHO CHROME EXTENSION
+FINAL FIX CORS CHO CHROME EXTENSION
 """
 
 from fastapi import FastAPI, Request
@@ -11,25 +11,24 @@ from src.scheduler import scheduler
 app = FastAPI(title="Price Tracker - cungnhaulamgiau.vn")
 
 
-# ====================== CUSTOM CORS MIDDLEWARE (MẠNH NHẤT) ======================
+# ====================== FINAL CUSTOM CORS (STRONGEST) ======================
 @app.middleware("http")
-async def add_cors_headers(request: Request, call_next):
-    # Xử lý Preflight (OPTIONS) request
+async def final_cors_middleware(request: Request, call_next):
+    # Xử lý Preflight OPTIONS
     if request.method == "OPTIONS":
-        response = JSONResponse(content={"message": "CORS Preflight OK"})
+        response = JSONResponse(content={"status": "ok"})
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept"
-        response.headers["Access-Control-Max-Age"] = "600"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Max-Age"] = "86400"
         return response
 
-    # Xử lý các request bình thường
     response = await call_next(request)
 
-    # Thêm CORS header cho mọi response
+    # Thêm header cho mọi response
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept"
+    response.headers["Access-Control-Allow-Headers"] = "*"
     response.headers["Access-Control-Expose-Headers"] = "*"
 
     return response
@@ -39,21 +38,16 @@ async def add_cors_headers(request: Request, call_next):
 app.include_router(router, prefix="/api")
 
 
-# ====================== HEALTH CHECK ======================
 @app.get("/")
 @app.get("/health")
 async def health_check():
-    return {
-        "status": "ok",
-        "message": "CNLG Backend is running - CUSTOM CORS ENABLED"
-    }
+    return {"status": "ok", "message": "FINAL CORS ENABLED"}
 
 
-# ====================== STARTUP ======================
 @app.on_event("startup")
 async def startup_event():
     scheduler.start()
-    print("✅ Backend đã chạy - CUSTOM CORS đã kích hoạt cho Chrome Extension")
+    print("✅ Backend chạy với FINAL CUSTOM CORS cho Chrome Extension")
 
 
-print("🚀 CNLG Backend started with STRONG CUSTOM CORS for Extension")
+print("🚀 CNLG Backend started with FINAL CORS FIX")

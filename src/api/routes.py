@@ -3,9 +3,9 @@ CNLG Price Tracker API - Full JWT Auth (Register + Login + Protected Routes)
 Dựa trên code mới nhất trên GitHub
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Body, Header
+from fastapi import APIRouter, Depends, HTTPException, Body, Header, Request
 from sqlalchemy.orm import Session
-from typing import Dict, Any
+from fastapi.responses import JSONResponse
 from src.database import get_db
 from src.models import User, PriceHistory
 from src.scraper import scrape_all_products
@@ -14,6 +14,16 @@ from datetime import datetime, timedelta
 
 router = APIRouter()
 
+@router.options("/{full_path:path}")
+async def options_handler(request: Request, full_path: str):
+    return JSONResponse(
+        content={"status": "ok"},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 # ==================== REGISTER ====================
 @router.post("/auth/register")

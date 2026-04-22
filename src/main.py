@@ -12,14 +12,13 @@ app = FastAPI(title="Price Tracker - cungnhaulamgiau.vn")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^chrome-extension://.*$",   # hỗ trợ mọi Extension ID
-    allow_credentials=True,                          # BẮT BUỘC vì dùng Bearer token
+    allow_origin_regex=r"^(https?://cungnhaulamgiau\.vn|chrome-extension://.*)$",
+    allow_credentials=True,      # BẮT BUỘC vì dùng Bearer token
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
 
-# ====================== ROUTES ======================
 app.include_router(router, prefix="/api")
 
 
